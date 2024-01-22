@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <title th:text="${msg}">Coba Spring MVC</title>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">Navbar</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarScroll" aria-controls="navbarScroll" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarScroll">
+            <ul class="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll" style="--bs-scroll-height: 100px;">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="#">Home</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">Link</a>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Link
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="#">Action</a></li>
+                  <li><a class="dropdown-item" href="#">Another action</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="#">Something else here</a></li>
+                </ul>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link disabled" aria-disabled="true">Link</a>
+              </li>
+            </ul>
+            <form class="d-flex" role="search">
+              <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+              <button class="btn btn-outline-success" type="submit">Search</button>
+            </form>
+          </div>
+        </div>
+    </nav>
+    <div class="container mt-3">
+
+      <!-- Button trigger modal -->
+      <button type="button" class="btn btn-primary float-end" id="button-add-product" data-bs-toggle="modal" data-bs-target="#addProductModal">
+        Add New Product
+      </button>
+
+      <!-- Modal -->
+      <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h1 class="modal-title fs-5" id="upsertModalLabel">Add Product</h1>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form th:object="${product}" id="form-upsert">
+            <div class="modal-body form-group">
+              <div class="mb-3">
+                <label for="inputCode" class="form-label">Code</label>
+                <input type="text" class="form-control" id="inputCodeEdit" th:field="*{code}">
+                <p class="text-error" th:if="${#fields.hasErrors('code')}" th:errors="*{code}"></p>
+                <input type="hidden" id="productId" th:field="*{id}">
+                <label for="inputName" class="form-label">Name</label>
+                <input type="text" class="form-control" id="inputNameEdit" th:field="*{name}">
+                <p class="text-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+                <label for="inputPrice" class="form-label">Price</label>
+                <input type="number" class="form-control" id="inputPriceEdit" th:field="*{price}">
+                <p class="text-error" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></p>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button type="button" class="btn btn-primary" id="action-button">Save</button>
+            </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div id="alertPlaceholder"></div>
+            
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="product : ${products}">
+            <td th:text="${product.id}"></td>
+            <td th:text="${product.code}"></td>
+            <td th:text="${product.name}"></td>
+            <td th:text="${product.price}"></td>
+            <td>
+              <a class="edit-product btn btn-warning" th:href="@{'/edit/'+${product.id}}">Edit</a>
+              <a class="btn btn-danger" th:href="@{'/delete/'+${product.id}}">Delete</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script src="/webjars/bootstrap/js/bootstrap.bundle.min.js" type="text/javascript"></script>
+</body>
+<script src="/webjars/jquery/3.7.1/dist/jquery.min.js" type="text/javascript"></script>
+<script>
+$(document).ready(function(){
+  $(document).on('click', '.edit-product', function (event) {
+        event.preventDefault();
+        action_url = $(this).attr('href');
+        $.ajax({
+            url: action_url,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            dataType:"json",
+            success:function(data)
+            {
+                $('#upsertModalLabel').html('Update Product');
+                $('#addProductModal').modal('show');
+                $('#inputCodeEdit').val(data.code);
+                $('#inputNameEdit').val(data.name);
+                $('#inputPriceEdit').val(data.price);
+                $('#productId').val(data.id);
+            }
+        });
+    });
+  
+  $(document).on('click', '#button-add-product', function(event){
+    $('#upsertModalLabel').html('Add Product');
+    $('#form-upsert')[0].reset();
+  });
+  const alertPlaceholder = document.getElementById('alertPlaceholder');
+  const appendAlert = (message, type) => {
+    const wrapper = document.createElement('div')
+    wrapper.innerHTML = [
+      `<div class="alert alert-${type} alert-dismissible" role="alert">`,
+      `   <div>${message}</div>`,
+      '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+      '</div>'
+    ].join('')
+    alertPlaceholder.append(wrapper)
+  }
+
+  $(document).on('click', '#action-button', function (event) {
+        event.preventDefault();
+        action_url = '/save';
+        $.ajax({
+            url: action_url,
+            type: 'post',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            dataType:"json",
+            success:function(xhr)
+            {
+              appendAlert(xhr.responseJSON.message, 'success')
+              $('#addProductModal').modal('hide');
+              $('#form-upsert')[0].reset();
+            },
+            error: function (xhr, status, error) {
+                var errorMessage = xhr.responseJSON.message;
+                appendAlert('Error: ' + errorMessage, 'danger');
+            }
+
+        });
+  });
+});
+</script>
+</html>
